@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentProtector — Manager Console</title>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --border:rgba(255,255,255,0.12);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.65);
+      --muted2:rgba(255,255,255,0.50);
+      --good:#22c55e; --bad:#ef4444; --warn:#f59e0b; --info:#60a5fa;
+      --shadow:0 18px 60px rgba(0,0,0,.45);
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans); color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(96,165,250,0.22), transparent 65%),
+        radial-gradient(900px 500px at 110% 20%, rgba(34,197,94,0.16), transparent 60%),
+        radial-gradient(900px 700px at 40% 120%, rgba(245,158,11,0.12), transparent 55%),
+        var(--bg);
+      min-height:100vh;
+    }
+
+    .wrap{max-width:1200px; margin:0 auto; padding:22px 18px 44px;}
+    .topbar{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(12px);
+      background: rgba(11,18,32,0.68);
+      border-bottom:1px solid var(--border);
+      margin:-22px -18px 18px;
+      padding:14px 18px;
+    }
+    .row{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    h1{margin:0; font-size:18px; letter-spacing:.2px;}
+    .sub{font-size:12.5px; color:var(--muted); line-height:1.35}
+    .mono{font-family:var(--mono); font-size:12px;}
+
+    .btnlink{
+      text-decoration:none; color:var(--text);
+      background:rgba(255,255,255,0.08);
+      border:1px solid var(--border);
+      padding:10px 12px;
+      border-radius:12px;
+      font-size:13px;
+      display:inline-flex; gap:8px; align-items:center;
+      transition: transform .08s ease, background .12s ease;
+    }
+    .btnlink:hover{background:rgba(255,255,255,0.12); transform:translateY(-1px);}
+
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.16);
+      background:rgba(255,255,255,0.08);
+      font-size:12px;
+      color:rgba(255,255,255,0.86);
+      white-space:nowrap;
+    }
+    .badge.blue{border-color: rgba(96,165,250,0.35); background: rgba(96,165,250,0.12);}
+    .badge.warn{border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.12);}
+    .dot{width:9px;height:9px;border-radius:999px;background:rgba(255,255,255,0.25);}
+    .dot.info{background:var(--info);}
+    .dot.warn{background:var(--warn);}
+
+    .hero{
+      margin:12px 0 14px;
+      background: linear-gradient(135deg, rgba(96,165,250,0.18), rgba(34,197,94,0.10));
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:18px;
+      padding:12px 14px;
+      box-shadow:var(--shadow);
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .hero .title{
+      font-weight:950;
+      letter-spacing:.2px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .hero .desc{
+      color:var(--muted);
+      font-size:12.8px;
+      margin-top:4px;
+      line-height:1.4;
+      max-width:860px;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border-radius:999px;
+      padding:6px 10px;
+      border:1px solid rgba(255,255,255,0.16);
+      background:rgba(0,0,0,0.20);
+      font-size:12px;
+      font-weight:900;
+      color:rgba(255,255,255,0.9);
+      white-space:nowrap;
+    }
+    .chip.good{border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.10);}
+    .chip.bad{border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.10);}
+    .chip.info{border-color: rgba(96,165,250,0.35); background: rgba(96,165,250,0.10);}
+    .chip.warn{border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.10);}
+
+    .stats{display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px; margin:14px 0 12px;}
+    @media (max-width: 900px){ .stats{grid-template-columns:1fr 1fr;} }
+    @media (max-width: 560px){ .stats{grid-template-columns:1fr;} }
+
+    .stat{
+      background:rgba(255,255,255,0.06);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:12px 14px;
+      box-shadow:var(--shadow);
+    }
+    .stat .k{color:var(--muted); font-size:12px; margin-bottom:6px;}
+    .stat .v{font-size:16px; font-weight:800; display:flex; gap:10px; align-items:center;}
+
+    .tabs{
+      display:flex; gap:10px; flex-wrap:wrap;
+      background:rgba(255,255,255,0.05);
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:6px;
+      width:fit-content;
+    }
+    .tab{
+      text-decoration:none;
+      padding:8px 12px;
+      border-radius:999px;
+      background:transparent;
+      color:var(--muted);
+      font-weight:800;
+      font-size:13px;
+      border:1px solid transparent;
+    }
+    .tab.active{
+      background:rgba(255,255,255,0.12);
+      color:var(--text);
+      border:1px solid rgba(255,255,255,0.18);
+    }
+
+    .controls{
+      margin-top:12px;
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    }
+    .filters{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    }
+
+    .input, .select{
+      background:rgba(0,0,0,0.22);
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px 12px;
+      outline:none;
+      font-size:13px;
+    }
+    .input{min-width:280px;}
+    .select{min-width:180px;}
+    .sm{min-width:120px;}
+    .input:focus, .select:focus{
+      border-color: rgba(96,165,250,0.55);
+      box-shadow: 0 0 0 4px rgba(96,165,250,0.15);
+    }
+
+    .ghost{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,0.06);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+      font-size:13px;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .ghost:hover{background:rgba(255,255,255,0.10);}
+    .ghost:disabled{opacity:.55; cursor:not-allowed;}
+
+    .tablewrap{
+      margin-top:12px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      overflow:hidden;
+      box-shadow:var(--shadow);
+    }
+
+    table{width:100%; border-collapse:collapse;}
+    th, td{padding:16px 12px; border-bottom:1px solid rgba(255,255,255,0.10); vertical-align:top;}
+    th{font-size:12px; color:var(--muted); text-align:left; background:rgba(255,255,255,0.04); position:sticky; top:0;}
+    tr:hover td{background:rgba(255,255,255,0.03);}
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,0.08);
+      font-size:12px;
+      color:rgba(255,255,255,0.86);
+      white-space:nowrap;
+      font-weight:900;
+    }
+    .pill.allow{border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.12);}
+    .pill.deny{border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.12);}
+    .pill.pending{border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.12);}
+
+    .riskLite{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-family:var(--mono);
+      font-weight:900;
+      font-size:12px;
+      padding:5px 9px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.06);
+      min-width:44px;
+    }
+    .riskLite.low{border-color: rgba(34,197,94,0.25); background: rgba(34,197,94,0.06);}
+    .riskLite.mid{border-color: rgba(245,158,11,0.25); background: rgba(245,158,11,0.06);}
+    .riskLite.high{border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.06);}
+
+    .headline{
+      font-weight:900;
+      letter-spacing:.2px;
+      margin-bottom:6px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .meta{color:var(--muted); font-size:13px; line-height:1.45;}
+    .meta b{color:rgba(255,255,255,0.85); font-weight:900;}
+    /* ✅ FIXED */
+    .metaSmall{color:var(--muted2); font-size:12px; margin-top:8px;}
+
+    details{
+      margin-top:10px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(0,0,0,0.18);
+      border-radius:12px;
+      padding:10px 12px;
+    }
+    summary{cursor:pointer; font-weight:900; color:rgba(255,255,255,0.88);}
+    ul{margin:8px 0 0 18px; padding:0;}
+    li{margin:4px 0; color:var(--muted);}
+
+    textarea{
+      width:100%;
+      min-height:54px;
+      background:rgba(0,0,0,0.22);
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      outline:none;
+      resize:vertical;
+      font-size:13px;
+    }
+    textarea:focus{
+      border-color: rgba(96,165,250,0.55);
+      box-shadow: 0 0 0 4px rgba(96,165,250,0.15);
+    }
+
+    .actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;}
+    .btn{
+      border:0; cursor:pointer;
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:900;
+      font-size:13px;
+      display:inline-flex; align-items:center; gap:8px;
+      transition:transform .08s ease, filter .12s ease;
+    }
+    .btn:hover{transform:translateY(-1px); filter:brightness(1.05);}
+    .btn:active{transform:translateY(0px);}
+    .btn.allow{background:rgba(34,197,94,0.92); color:#06230f;}
+    .btn.deny{background:rgba(239,68,68,0.92); color:#2a0707;}
+    .btn:disabled{opacity:.6; cursor:not-allowed; transform:none;}
+
+    .pagination{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px;}
+    .pager{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .pageinfo{color:var(--muted); font-size:13px;}
+    .empty{
+      margin-top:12px;
+      background:rgba(255,255,255,0.05);
+      border:1px dashed rgba(255,255,255,0.20);
+      border-radius:var(--radius);
+      padding:18px;
+      color:var(--muted);
+    }
+
+    .toast{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      max-width: 520px;
+      display:none;
+      font-size:13px;
+      color:rgba(255,255,255,0.9);
+      z-index:999;
+      white-space:pre-wrap;
+    }
+    .toast.show{display:block;}
+  </style>
+</head>
+
+<body data-refresh="{{ refresh }}" data-org-id="{{ org_id }}" data-from="{{ request.query_params.get('from','') }}">
+  <div class="topbar">
+    <div class="wrap">
+      <div class="row">
+        <div>
+          <h1>AgentProtector — Manager Console</h1>
+          <div class="sub">
+            Mode: <b>{{ 'Pending Approvals' if tab == 'pending' else 'Decisions History' }}</b>
+            &nbsp;•&nbsp;
+            <span class="badge blue"><span class="dot info"></span>Policy: Hard Rules + Gemini</span>
+            <span id="refreshPausedBadge" class="badge warn" style="display:none;"><span class="dot warn"></span>Auto-refresh paused (typing / Gemini…)</span>
+          </div>
+        </div>
+
+        <div class="row" style="justify-content:flex-end;">
+          {% if request.query_params.get('from') == 'demo' %}
+            <a class="btnlink" href="/demo?org_id={{ org_id }}">⬅ Back to Demo Agent</a>
+          {% endif %}
+          <a class="btnlink" href="/manager/audit?org_id={{ org_id }}">📜 Audit</a>
+          <a class="btnlink" href="/docs" target="_blank">🧪 Swagger</a>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div>
+          <div class="title">
+            ⚡ Gemini Policy Engine
+            {% if gemini_status and gemini_status.enabled %}
+              <span class="chip good">✅ Enabled</span>
+              <span class="chip info">Model: <span class="mono">{{ gemini_status.model }}</span></span>
+            {% else %}
+              <span class="chip bad">❌ Disabled</span>
+              <span class="chip warn">Set <span class="mono">GEMINI_API_KEY</span> to enable</span>
+            {% endif %}
+          </div>
+          <div class="desc">
+            Policy decisions are computed using <b>Hard Rules</b> + <b>Gemini</b>.
+          </div>
+        </div>
+      </div>
+
+      {% if request.query_params.get('from') == 'demo' %}
+        <div class="hero" style="margin-top:10px; background:rgba(96,165,250,0.10); border-color:rgba(96,165,250,0.22);">
+          <div class="desc" style="margin:0;">
+            ✅ Opened from <b>Demo Agent</b>. Approve/deny requests here, then return to execute the tool.
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="stats">
+        <div class="stat">
+          <div class="k">Pending</div>
+          <div class="v"><span class="dot warn"></span>{{ stats.pending }}</div>
+        </div>
+        <div class="stat">
+          <div class="k">Allowed</div>
+          <div class="v"><span class="dot" style="background:var(--good)"></span>{{ stats.allow }}</div>
+        </div>
+        <div class="stat">
+          <div class="k">Denied</div>
+          <div class="v"><span class="dot" style="background:var(--bad)"></span>{{ stats.deny }}</div>
+        </div>
+        <div class="stat">
+          <div class="k">Auto-refresh</div>
+          <div class="v">
+            <span class="dot info"></span>
+            {{ (refresh|string) + 's' if refresh > 0 else 'Off' }}
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:flex-start;">
+        <div class="tabs" role="tablist" aria-label="Console tabs">
+          <a class="tab {{ 'active' if tab=='pending' else '' }}"
+             href="/manager/console?org_id={{ org_id }}&tab=pending&q={{ q }}&decision={{ decision }}&refresh={{ refresh }}{% if request.query_params.get('from')=='demo' %}&from=demo{% endif %}">
+            Pending
+          </a>
+          <a class="tab {{ 'active' if tab=='decided' else '' }}"
+             href="/manager/console?org_id={{ org_id }}&tab=decided&q={{ q }}&decision={{ decision }}&refresh={{ refresh }}{% if request.query_params.get('from')=='demo' %}&from=demo{% endif %}">
+            Decided
+          </a>
+        </div>
+
+        <div class="controls">
+          <!-- Filters (GET) -->
+          <form class="filters" method="get" action="/manager/console">
+            <input type="hidden" name="org_id" value="{{ org_id }}">
+            <input type="hidden" name="tab" value="{{ tab }}">
+            {% if request.query_params.get('from') == 'demo' %}
+              <input type="hidden" name="from" value="demo">
+            {% endif %}
+
+            <input class="input" name="q" value="{{ q }}" placeholder="Search purpose, scope, resource..." />
+
+            <select class="select" name="decision">
+              <option value="" {{ 'selected' if not decision else '' }}>All decisions</option>
+              <option value="NEEDS_APPROVAL" {{ 'selected' if decision=='NEEDS_APPROVAL' else '' }}>NEEDS_APPROVAL</option>
+              <option value="ALLOW" {{ 'selected' if decision=='ALLOW' else '' }}>ALLOW</option>
+              <option value="DENY" {{ 'selected' if decision=='DENY' else '' }}>DENY</option>
+            </select>
+
+            <select class="select sm" name="refresh">
+              <option value="0"  {{ 'selected' if refresh==0 else '' }}>Refresh: Off</option>
+              <option value="3"  {{ 'selected' if refresh==3 else '' }}>Refresh: 3s</option>
+              <option value="6"  {{ 'selected' if refresh==6 else '' }}>Refresh: 6s</option>
+              <option value="10" {{ 'selected' if refresh==10 else '' }}>Refresh: 10s</option>
+              <option value="20" {{ 'selected' if refresh==20 else '' }}>Refresh: 20s</option>
+            </select>
+
+            <button class="ghost" type="submit">🔎 Apply</button>
+
+            <a class="ghost"
+               href="/manager/console?org_id={{ org_id }}&tab={{ tab }}&refresh={{ refresh }}{% if request.query_params.get('from')=='demo' %}&from=demo{% endif %}">
+              ↩ Reset
+            </a>
+          </form>
+
+          <!-- Seed Judge Cases (POST) - separate form -->
+          <form method="post" action="/manager/seed_judge">
+            <input type="hidden" name="org_id" value="{{ org_id }}">
+            {% if request.query_params.get('from') == 'demo' %}
+              <input type="hidden" name="from" value="demo">
+            {% endif %}
+            <button class="ghost" type="submit">🧪 Seed Judge Cases</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    {% if items|length == 0 %}
+      <div class="empty">
+        <b>No results.</b>
+        <div class="meta" style="margin-top:6px;">
+          Try clearing filters or seed judge cases.
+        </div>
+      </div>
+    {% else %}
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:150px;">Decision</th>
+              <th style="width:90px;">Risk</th>
+              <th>Request</th>
+              {% if tab == 'pending' %}
+                <th style="width:360px;">Action</th>
+              {% else %}
+                <th style="width:180px;">Decided</th>
+              {% endif %}
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for r in items %}
+              <tr>
+                <td>
+                  {% if r.decision == 'ALLOW' %}
+                    <span class="pill allow">✅ ALLOW</span>
+                  {% elif r.decision == 'DENY' %}
+                    <span class="pill deny">❌ DENY</span>
+                  {% else %}
+                    <span class="pill pending">🕒 NEEDS_APPROVAL</span>
+                  {% endif %}
+                  {% if r.decision_reason %}
+                    <div class="metaSmall">{{ r.decision_reason }}</div>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% set rs = r.risk_score if r.risk_score is not none else 0 %}
+                  {% if rs >= 75 %}
+                    <span class="riskLite high">{{ rs }}</span>
+                  {% elif rs >= 35 %}
+                    <span class="riskLite mid">{{ rs }}</span>
+                  {% else %}
+                    <span class="riskLite low">{{ rs }}</span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  <div class="headline">
+                    <span style="opacity:.92;">{{ r.requested_resource }}</span>
+                    <span style="opacity:.55;">•</span>
+                    <span style="opacity:.92;">{{ r.data_types }}</span>
+                    <span style="opacity:.55;">•</span>
+                    <span style="opacity:.92;">{{ r.scope }}</span>
+                  </div>
+
+                  <div class="meta"><b>Purpose:</b> {{ r.purpose }}</div>
+
+                  <div class="metaSmall">
+                    Created: <span class="mono">{{ r.created_at }}</span>
+                  </div>
+
+                  <details>
+                    <summary>Details</summary>
+
+                    {% if r.policy_reason %}
+                      <div class="meta" style="margin-top:8px;">
+                        <b>Policy reasoning:</b> {{ r.policy_reason }}
+                      </div>
+                    {% endif %}
+
+                    {% if r.constraints and r.constraints|length > 0 %}
+                      <div class="meta" style="margin-top:10px;"><b>Constraints</b></div>
+                      <ul>
+                        {% for c in r.constraints %}
+                          <li>{{ c }}</li>
+                        {% endfor %}
+                      </ul>
+                    {% endif %}
+
+                    {% if r.safe_alternative %}
+                      <div class="meta" style="margin-top:10px;">
+                        <b>Safe alternative:</b> {{ r.safe_alternative }}
+                      </div>
+                    {% endif %}
+
+                    <details style="margin-top:10px;">
+                      <summary>Technical</summary>
+                      <div class="meta" style="margin-top:8px;">
+                        <b>Request ID:</b> <span class="mono" id="rid_{{ r.id }}">{{ r.id }}</span>
+                        &nbsp;•&nbsp;
+                        <a class="ghost" href="#" onclick="copyText('{{ r.id }}'); return false;">📋 Copy</a>
+                      </div>
+                      <div class="meta" style="margin-top:8px;">
+                        <b>Agent ID:</b> <span class="mono">{{ r.agent_id or "unknown" }}</span>
+                      </div>
+                      <div class="meta" style="margin-top:8px;">
+                        <b>Org ID:</b> <span class="mono">{{ r.org_id }}</span>
+                      </div>
+                    </details>
+                  </details>
+                </td>
+
+                {% if tab == 'pending' %}
+                  <td>
+                    <form method="post" action="/manager/decision" class="decisionForm" data-request-id="{{ r.id }}">
+                      <input type="hidden" name="org_id" value="{{ org_id }}">
+                      <input type="hidden" name="request_id" value="{{ r.id }}">
+                      <input type="hidden" name="tab" value="{{ tab }}">
+                      <input type="hidden" name="q" value="{{ q }}">
+                      <input type="hidden" name="page" value="{{ page }}">
+                      <input type="hidden" name="refresh" value="{{ refresh }}">
+                      {% if request.query_params.get('from') == 'demo' %}
+                        <input type="hidden" name="from" value="demo">
+                      {% endif %}
+                      <input type="hidden" name="decision" value="">
+
+                      <div class="metaSmall" style="margin-bottom:8px;">
+                        <a class="ghost" href="#" onclick="askGemini('{{ r.id }}'); return false;">
+                          ✨ Ask Gemini (manager assist)
+                        </a>
+                        <span class="mono" id="ai_status_{{ r.id }}" style="opacity:.7; margin-left:8px;">idle</span>
+                      </div>
+
+                      <div id="ai_box_{{ r.id }}" style="display:none; margin-bottom:10px; border:1px solid rgba(255,255,255,0.14); background:rgba(0,0,0,0.18); padding:10px 12px; border-radius:12px;">
+                        <div class="headline" style="margin:0 0 6px 0; justify-content:space-between; width:100%;">
+                          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <span class="pill pending" id="ai_rec_{{ r.id }}">✨</span>
+                            <span class="metaSmall" id="ai_meta_{{ r.id }}"></span>
+                          </div>
+                          <button class="ghost" type="button" onclick="closeGeminiBox('{{ r.id }}')" style="padding:6px 10px;">
+                            ✖ Close
+                          </button>
+                        </div>
+
+                        <ul id="ai_points_{{ r.id }}" style="margin:6px 0 0 18px;"></ul>
+                        <div class="actions" style="margin-top:10px;">
+                          <button id="ai_use_{{ r.id }}" class="ghost" type="button" onclick="applyGeminiReason('{{ r.id }}')" disabled>
+                            📝 Use this reason
+                          </button>
+                        </div>
+                      </div>
+
+                      <textarea
+                        name="reason"
+                        class="reasonBox"
+                        data-request-id="{{ r.id }}"
+                        placeholder="Manager reason (recommended). Example: Approved for customer:123 only"></textarea>
+
+                      <div class="actions">
+                        <button class="btn allow" type="button" onclick="submitDecision(this, 'ALLOW')">
+                          ✅ Approve
+                        </button>
+                        <button class="btn deny" type="button"
+                                onclick="if(confirm('Are you sure you want to DENY this request?')) submitDecision(this, 'DENY')">
+                          ❌ Deny
+                        </button>
+                      </div>
+
+                      <div class="metaSmall">Tip: add a reason → looks professional in audit logs.</div>
+                    </form>
+                  </td>
+                {% else %}
+                  <td>
+                    <div class="meta"><b>Decided:</b></div>
+                    <div class="mono">{{ r.decided_at or "-" }}</div>
+                  </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="pagination">
+          <div class="pageinfo">
+            Showing <b>{{ items|length }}</b> of <b>{{ total }}</b> • Page <b>{{ page }}</b> / <b>{{ total_pages }}</b>
+          </div>
+
+          <div class="pager">
+            {% set prev = page - 1 %}
+            {% set nxt = page + 1 %}
+
+            <a class="ghost" href="/manager/console?org_id={{ org_id }}&tab={{ tab }}&q={{ q }}&decision={{ decision }}&page=1&refresh={{ refresh }}{% if request.query_params.get('from')=='demo' %}&from=demo{% endif %}">⏮ First</a>
+            <a class="ghost" href="/manager/console?org_id={{ org_id }}&tab={{ tab }}&q={{ q }}&decision={{ decision }}&page={{ prev if prev>=1 else 1 }}&refresh={{ refresh }}{% if request.query_params.get('from')=='demo' %}&from=demo{% endif %}">◀ Prev</a>
+            <a class="ghost" href="/manager/console?org_id={{ org_id }}&tab={{ tab }}&q={{ q }}&decision={{ decision }}&page={{ nxt if nxt<=total_pages else total_pages }}&refresh={{ refresh }}{% if request.query_params.get('from')=='demo' %}&from=demo{% endif %}">Next ▶</a>
+            <a class="ghost" href="/manager/console?org_id={{ org_id }}&tab={{ tab }}&q={{ q }}&decision={{ decision }}&page={{ total_pages }}&refresh={{ refresh }}{% if request.query_params.get('from')=='demo' %}&from=demo{% endif %}">Last ⏭</a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const bodyEl = document.body;
+
+    // ------------------ Toast ------------------
+    const toast = document.getElementById("toast");
+    function showToast(msg) {
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2400);
+    }
+
+    // Optional: show toast if URL has ?seeded=1
+    (function(){
+      const p = new URLSearchParams(window.location.search);
+      if (p.get("seeded") === "1") showToast("Seeded judge cases ✅");
+    })();
+
+    // ------------------ Auto Refresh (LOCK-BASED) ------------------
+    const refreshSec = Number(bodyEl.getAttribute("data-refresh") || "0");
+    let refreshTimer = null;
+
+    const pausedBadge = document.getElementById("refreshPausedBadge");
+    function showPausedBadge(show) {
+      if (!pausedBadge) return;
+      pausedBadge.style.display = show ? "inline-flex" : "none";
+    }
+
+    let refreshLocks = 0;
+
+    window.addEventListener("beforeunload", function (e) {
+      if (refreshLocks > 0) {
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+      }
+    });
+
+    function startRefresh() {
+      if (!refreshSec || refreshSec <= 0) return;
+      if (refreshLocks > 0) return;
+      stopRefresh();
+      refreshTimer = setInterval(() => {
+        if (refreshLocks > 0) return;
+        window.location.reload();
+      }, refreshSec * 1000);
+    }
+    function stopRefresh() {
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+
+    function lockRefresh() {
+      refreshLocks += 1;
+      stopRefresh();
+      showPausedBadge(true);
+    }
+    function unlockRefresh() {
+      refreshLocks = Math.max(0, refreshLocks - 1);
+      if (refreshLocks === 0) {
+        showPausedBadge(false);
+        startRefresh();
+      }
+    }
+
+    document.addEventListener("focusin", (e) => {
+      const t = e.target;
+      if (!t) return;
+      const tag = (t.tagName || "").toUpperCase();
+      if (tag === "TEXTAREA" || tag === "INPUT" || tag === "SELECT") lockRefresh();
+    });
+    document.addEventListener("focusout", (e) => {
+      const t = e.target;
+      if (!t) return;
+      const tag = (t.tagName || "").toUpperCase();
+      if (tag === "TEXTAREA" || tag === "INPUT" || tag === "SELECT") unlockRefresh();
+    });
+
+    // ------------------ Copy ------------------
+    function copyText(txt) {
+      if (!txt) return;
+      navigator.clipboard.writeText(txt)
+        .then(() => showToast("Copied"))
+        .catch(() => showToast("Copy failed"));
+    }
+
+    // ------------------ Drafts (reason box) ------------------
+    function draftKey(orgId, requestId) {
+      return "ap_reason_" + orgId + "_" + requestId;
+    }
+    const ORG_ID = bodyEl.getAttribute("data-org-id") || "";
+
+    function loadDrafts() {
+      document.querySelectorAll(".reasonBox").forEach((ta) => {
+        const rid = ta.getAttribute("data-request-id");
+        if (!rid) return;
+        const k = draftKey(ORG_ID, rid);
+        const saved = localStorage.getItem(k);
+        if (saved && !ta.value) ta.value = saved;
+      });
+    }
+
+    function saveDraft(requestId, text) {
+      const k = draftKey(ORG_ID, requestId);
+      if (!text) return localStorage.removeItem(k);
+      localStorage.setItem(k, text);
+    }
+
+    function clearDraft(requestId) {
+      const k = draftKey(ORG_ID, requestId);
+      localStorage.removeItem(k);
+    }
+
+    document.addEventListener("input", (e) => {
+      const t = e.target;
+      if (!t || !t.classList || !t.classList.contains("reasonBox")) return;
+      const rid = t.getAttribute("data-request-id");
+      if (!rid) return;
+      saveDraft(rid, t.value || "");
+    });
+
+    function submitDecision(btn, decisionValue) {
+      const form = btn.closest("form");
+      if (!form) return;
+
+      const decisionInput = form.querySelector('input[name="decision"]');
+      if (!decisionInput) return;
+
+      decisionInput.value = decisionValue;
+
+      const rid = form.getAttribute("data-request-id");
+      if (rid) clearDraft(rid);
+
+      form.querySelectorAll("button").forEach(b => b.disabled = true);
+      form.submit();
+    }
+
+    // ------------------ Gemini Manager Assist ------------------
+    const geminiCache = {};
+    const geminiOpen = {};
+
+    function closeGeminiBox(requestId) {
+      const boxEl = document.getElementById("ai_box_" + requestId);
+      const statusEl = document.getElementById("ai_status_" + requestId);
+      if (boxEl) boxEl.style.display = "none";
+      if (statusEl) statusEl.textContent = "idle";
+
+      if (geminiOpen[requestId]) {
+        geminiOpen[requestId] = false;
+        unlockRefresh();
+      }
+    }
+
+    function setAiBox(requestId, {statusText, recText, metaText, points, canApply}) {
+      const statusEl = document.getElementById("ai_status_" + requestId);
+      const boxEl = document.getElementById("ai_box_" + requestId);
+      const recEl = document.getElementById("ai_rec_" + requestId);
+      const metaEl = document.getElementById("ai_meta_" + requestId);
+      const pointsEl = document.getElementById("ai_points_" + requestId);
+      const useBtn = document.getElementById("ai_use_" + requestId);
+
+      if (statusEl) statusEl.textContent = statusText || "";
+      if (recEl) recEl.textContent = recText || "✨";
+      if (metaEl) metaEl.textContent = metaText || "";
+      if (pointsEl) {
+        pointsEl.innerHTML = "";
+        (points || []).forEach((p) => {
+          const li = document.createElement("li");
+          li.textContent = p;
+          pointsEl.appendChild(li);
+        });
+      }
+      if (useBtn) useBtn.disabled = !canApply;
+      if (boxEl) boxEl.style.display = "block";
+    }
+
+    async function askGemini(requestId) {
+      const orgId = bodyEl.getAttribute("data-org-id") || "";
+      const url = `/manager/ai_suggest/${encodeURIComponent(requestId)}?org_id=${encodeURIComponent(orgId)}`;
+
+      if (!geminiOpen[requestId]) {
+        geminiOpen[requestId] = true;
+        lockRefresh();
+      }
+
+      setAiBox(requestId, {
+        statusText: "loading…",
+        recText: "✨ Asking Gemini…",
+        metaText: "",
+        points: ["Contacting model…"],
+        canApply: false
+      });
+
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 12000);
+
+      try {
+        const res = await fetch(url, { headers: { "Accept": "application/json" }, signal: controller.signal });
+
+        let data = null;
+        try { data = await res.json(); } catch (_) { data = null; }
+
+        if (!res.ok) {
+          const msg = (data && (data.error || data.detail)) ? (data.error || data.detail) : `HTTP ${res.status}`;
+          throw new Error(msg);
+        }
+
+        const enabled = !!(data && data.enabled);
+        const model = (data && data.model) ? data.model : "unknown";
+        const err = (data && data.error) ? String(data.error) : "";
+        const points = (data && Array.isArray(data.key_points)) ? data.key_points : [];
+
+        if (!enabled) {
+          setAiBox(requestId, {
+            statusText: "unavailable",
+            recText: "✨ Gemini Assistant unavailable",
+            metaText: `Model: ${model}${err ? " • " + err : ""}`,
+            points: points.length ? points : ["Gemini did not return a usable suggestion."],
+            canApply: false
+          });
+          showToast(`Gemini unavailable: ${err || "check server logs"}`);
+          return;
+        }
+
+        const rec = (data.recommendation || "REVIEW").trim();
+        const conf = Number(data.confidence || 0);
+        const managerReason = (data.manager_reason || "").trim();
+
+        geminiCache[requestId] = { manager_reason: managerReason, recommendation: rec };
+        const canApply = managerReason.length >= 10;
+
+        setAiBox(requestId, {
+          statusText: "ready",
+          recText: `✨ ${rec} (${conf}%)`,
+          metaText: `Model: ${model}`,
+          points: points.length ? points : ["No key points returned."],
+          canApply
+        });
+
+        showToast(canApply ? "Gemini suggestion ready." : "Gemini returned no usable reason text.");
+      } catch (e) {
+        const msg = (e && e.name === "AbortError")
+          ? "Timeout: Gemini request took too long"
+          : `Error: ${e?.message || "unknown"}`;
+
+        setAiBox(requestId, {
+          statusText: "error",
+          recText: "✨ Gemini error",
+          metaText: msg,
+          points: ["Request failed. Check backend logs and GEMINI_API_KEY/model."],
+          canApply: false
+        });
+        showToast(msg);
+      } finally {
+        clearTimeout(t);
+      }
+    }
+
+    function applyGeminiReason(requestId) {
+      const ta = document.querySelector(`textarea.reasonBox[data-request-id="${requestId}"]`);
+      const cached = geminiCache[requestId];
+      if (!ta || !cached) return;
+
+      const reason = (cached.manager_reason || "").trim();
+      if (!reason) { showToast("No AI reason available"); return; }
+
+      ta.value = reason;
+      saveDraft(requestId, ta.value || "");
+      showToast("Reason applied");
+      closeGeminiBox(requestId);
+    }
+
+    loadDrafts();
+    startRefresh();
+  </script>
+</body>
+</html>

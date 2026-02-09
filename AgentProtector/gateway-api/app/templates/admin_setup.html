@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentProtector — Setup</title>
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#0f1b33; --border:rgba(255,255,255,.12);
+      --text:rgba(255,255,255,.92); --muted:rgba(255,255,255,.65);
+      --good:#22c55e; --link:#60a5fa; --shadow:0 18px 60px rgba(0,0,0,.45);
+      --radius:16px; --mono: ui-monospace, Menlo, Consolas, monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans); color:var(--text);
+      background:
+        radial-gradient(900px 500px at 10% 0%, rgba(96,165,250,.18), transparent 55%),
+        radial-gradient(900px 600px at 100% 20%, rgba(34,197,94,.14), transparent 60%),
+        var(--bg);
+      min-height:100vh;
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:26px 18px 40px}
+    .card{
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow);
+    }
+    h1{margin:0 0 6px;font-size:18px}
+    .muted{color:var(--muted);font-size:13px;line-height:1.45}
+    .grid{display:grid;gap:12px;margin-top:12px}
+    label{font-size:12px;color:var(--muted)}
+    input{
+      width:100%;
+      padding:11px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.20);
+      color:var(--text);
+      outline:none;
+      margin-top:6px;
+    }
+    input:focus{border-color:rgba(96,165,250,.55); box-shadow:0 0 0 4px rgba(96,165,250,.15)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:780px){.row{grid-template-columns:1fr}}
+    .btn{
+      margin-top:12px;
+      border:0; cursor:pointer;
+      padding:11px 14px;
+      border-radius:12px;
+      font-weight:800;
+      background:rgba(34,197,94,.92);
+      color:#06230f;
+    }
+    .pill{
+      font-family:var(--mono);
+      font-size:12px;
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.08);
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .box{
+      margin-top:12px;
+      border:1px dashed rgba(255,255,255,.20);
+      border-radius:var(--radius);
+      padding:14px;
+      background:rgba(255,255,255,.04);
+    }
+    a{color:var(--link);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .ok{color:var(--good);font-weight:800}
+    .hint{margin-top:8px;font-size:12px;color:var(--muted)}
+    code{font-family:var(--mono)}
+    .copy{
+      margin-top:8px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.18);
+      font-family:var(--mono);
+      font-size:12px;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>AgentProtector — Quick Setup</h1>
+      <div class="muted">
+        Create an Organization + Agent API key for quick testing (judge-friendly).  
+        Then run SDK using the generated <code>AGENT_API_KEY</code>.
+      </div>
+
+      <form method="post" action="/admin/setup" class="grid">
+        <div class="row">
+          <div>
+            <label>Organization Name</label>
+            <input name="org_name" placeholder="e.g., ACME Corp" required />
+          </div>
+          <div>
+            <label>Agent Name</label>
+            <input name="agent_name" placeholder="e.g., SupportBot-1" required />
+          </div>
+        </div>
+        <button class="btn" type="submit">✅ Create Org + Agent Key</button>
+      </form>
+
+      {% if created %}
+      <div class="box">
+        <div class="ok">Created successfully ✅</div>
+
+        <div class="hint">Org</div>
+        <div class="copy">org_id={{ created.org_id }} | name={{ created.org_name }}</div>
+
+        <div class="hint">Agent</div>
+        <div class="copy">agent_id={{ created.agent_id }} | name={{ created.agent_name }}</div>
+
+        <div class="hint">API Key (shown once)</div>
+        <div class="copy">AGENT_API_KEY={{ created.api_key }}</div>
+
+        <div class="hint">
+          Manager Console:
+          <a href="/manager/console?org_id={{ created.org_id }}" target="_blank">
+            /manager/console?org_id={{ created.org_id }}
+          </a>
+        </div>
+
+        <div class="hint">
+          Next: put this in <code>sdk/.env</code>:
+        </div>
+        <div class="copy">GATEWAY_BASE_URL=http://127.0.0.1:8000
+AGENT_API_KEY={{ created.api_key }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

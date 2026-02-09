@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentProtector • Admin</title>
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#0f1b33; --card:rgba(255,255,255,0.06);
+      --border:rgba(255,255,255,0.12); --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.65); --link:#60a5fa; --good:#22c55e;
+      --shadow:0 18px 60px rgba(0,0,0,.45); --radius:16px;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+      --sans:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans); color:var(--text);
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(96,165,250,0.22), transparent 65%),
+                  radial-gradient(900px 500px at 110% 20%, rgba(34,197,94,0.16), transparent 60%),
+                  var(--bg);
+      min-height:100vh;
+    }
+    .wrap{max-width:1100px;margin:0 auto;padding:22px 18px 40px}
+    .topbar{
+      background:rgba(11,18,32,0.65); border-bottom:1px solid var(--border);
+      backdrop-filter:blur(12px); position:sticky; top:0; z-index:10;
+      margin:-22px -18px 18px; padding:14px 18px;
+    }
+    .row{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+    h1{margin:0;font-size:18px}
+    .sub{color:var(--muted);font-size:13px}
+    .mono{font-family:var(--mono); font-size:12px; padding:4px 8px; border-radius:10px;
+          background:rgba(255,255,255,0.08); border:1px solid var(--border)}
+    .btn{
+      border:0; cursor:pointer; border-radius:12px; padding:10px 12px;
+      font-weight:700; font-size:13px; background:rgba(96,165,250,0.92); color:#061a2a;
+    }
+    .btn:hover{filter:brightness(1.05)}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.05));
+      border:1px solid var(--border); border-radius:var(--radius);
+      padding:14px; box-shadow:var(--shadow);
+    }
+    .grid{display:grid; gap:12px; grid-template-columns:1fr 1fr}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+    input{
+      width:100%; padding:10px 12px; border-radius:12px; outline:none;
+      border:1px solid var(--border); background:rgba(0,0,0,0.22);
+      color:var(--text);
+    }
+    input:focus{border-color:rgba(96,165,250,0.55); box-shadow:0 0 0 4px rgba(96,165,250,0.15)}
+    a{color:var(--link); text-decoration:none}
+    a:hover{text-decoration:underline}
+    .pill{display:inline-flex; gap:8px; align-items:center; padding:6px 10px;
+          border-radius:999px; background:rgba(255,255,255,0.08); border:1px solid var(--border);
+          font-size:12px}
+    .muted{color:var(--muted); font-size:13px}
+    .list{margin-top:10px; display:grid; gap:10px}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="wrap">
+      <div class="row">
+        <div>
+          <h1>AgentProtector • Admin Console</h1>
+          <div class="sub">Create organizations, issue agent API keys (shown once), and open the Manager Console.</div>
+        </div>
+        <div class="pill">✅ Gateway ready • <span class="mono">/docs</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="grid">
+      <div class="card">
+        <h3 style="margin:0 0 8px;">Create Organization</h3>
+        <div class="muted" style="margin-bottom:12px;">
+          This generates a new <span class="mono">org_id</span> used by Manager Console.
+        </div>
+
+        <form method="post" action="/admin/orgs">
+          <input name="name" placeholder="Organization name (e.g. Acme Corp)" required />
+          <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+            <button class="btn" type="submit">➕ Create Org</button>
+            <a href="/docs" target="_blank">Open Swagger</a>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 8px;">Organizations</h3>
+        <div class="muted">Click an org to issue agent keys and open Manager Console.</div>
+
+        <div class="list">
+          {% if orgs|length == 0 %}
+            <div class="muted" style="margin-top:10px;">No organizations yet. Create one on the left.</div>
+          {% endif %}
+
+          {% for o in orgs %}
+            <div class="pill" style="justify-content:space-between;">
+              <div>
+                <b>{{ o.name }}</b>
+                <div class="muted" style="font-size:12px;">org_id: <span class="mono">{{ o.id }}</span></div>
+              </div>
+              <div>
+                <a href="/admin/org/{{ o.id }}">Manage →</a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="muted" style="margin-top:16px;">
+      Tip: The agent key is shown <b>one time only</b>. Save it into <span class="mono">sdk/.env</span> as <span class="mono">AGENT_API_KEY</span>.
+    </div>
+  </div>
+</body>
+</html>

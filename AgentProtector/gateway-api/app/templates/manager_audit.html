@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentProtector — Audit Logs</title>
+
+  <style>
+    :root{
+      --bg:#0b1220; --border:rgba(255,255,255,0.12);
+      --text:rgba(255,255,255,0.92); --muted:rgba(255,255,255,0.65);
+      --shadow:0 18px 60px rgba(0,0,0,.45); --radius:16px;
+      --mono: ui-monospace, Menlo, Consolas, monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      --card:rgba(255,255,255,0.06);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans); color:var(--text);
+      background:
+        radial-gradient(1000px 550px at 15% 0%, rgba(96,165,250,0.18), transparent 55%),
+        radial-gradient(900px 600px at 100% 20%, rgba(34,197,94,0.14), transparent 60%),
+        var(--bg);
+      min-height:100vh;
+    }
+    .wrap{max-width:1200px; margin:0 auto; padding:22px 18px 44px;}
+    .topbar{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(12px);
+      background: rgba(11,18,32,0.68);
+      border-bottom:1px solid var(--border);
+      margin:-22px -18px 18px;
+      padding:14px 18px;
+    }
+    h1{margin:0; font-size:18px;}
+    .sub{font-size:12.5px; color:var(--muted); margin-top:6px;}
+    .pillmono{
+      font-family:var(--mono); font-size:12px;
+      background:rgba(255,255,255,0.08);
+      border:1px solid var(--border);
+      padding:4px 8px; border-radius:999px;
+      display:inline-block;
+      max-width: 100%;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .row{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    a.btnlink{
+      text-decoration:none; color:var(--text);
+      background:rgba(255,255,255,0.08);
+      border:1px solid var(--border);
+      padding:10px 12px; border-radius:12px; font-size:13px;
+      display:inline-flex; gap:8px; align-items:center;
+    }
+    a.btnlink:hover{background:rgba(255,255,255,0.12);}
+
+    .filters{
+      margin-top:12px;
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    }
+    .input, .select{
+      background:rgba(0,0,0,0.22);
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px 12px;
+      outline:none;
+      font-size:13px;
+    }
+    .input{min-width:320px;}
+    .select{min-width:220px;}
+    .ghost{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,0.06);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+      font-size:13px;
+      text-decoration:none;
+      display:inline-block;
+    }
+    .ghost:hover{background:rgba(255,255,255,0.10);}
+
+    .tablewrap{
+      margin-top:12px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      overflow:hidden;
+      box-shadow:var(--shadow);
+    }
+    table{width:100%; border-collapse:collapse;}
+    th, td{padding:12px 12px; border-bottom:1px solid rgba(255,255,255,0.10); vertical-align:top;}
+    th{font-size:12px; color:var(--muted); text-align:left; background:rgba(255,255,255,0.04); position:sticky; top:0;}
+    tr:hover td{background:rgba(255,255,255,0.03);}
+    .mono{font-family:var(--mono); font-size:12px; color:rgba(255,255,255,0.88);}
+    .msg{color:rgba(255,255,255,0.88); line-height:1.45;}
+    .pagination{
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding:12px;
+    }
+    .pageinfo{color:var(--muted); font-size:13px;}
+    .pager{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .empty{
+      margin-top:12px;
+      background:rgba(255,255,255,0.05);
+      border:1px dashed rgba(255,255,255,0.20);
+      border-radius:var(--radius);
+      padding:18px;
+      color:var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="wrap">
+      <div class="row">
+        <div>
+          <h1>AgentProtector — Audit Logs</h1>
+          <div class="sub">
+            Org: <span class="pillmono">{{ org_id }}</span>
+          </div>
+        </div>
+        <div class="row" style="justify-content:flex-end;">
+          <a class="btnlink" href="/manager/console?org_id={{ org_id }}">⬅ Back to Console</a>
+          <a class="btnlink" href="/docs" target="_blank">🧪 Swagger</a>
+        </div>
+      </div>
+
+      <form class="filters" method="get" action="/manager/audit">
+        <input type="hidden" name="org_id" value="{{ org_id }}">
+        <input class="input" name="q" value="{{ q }}" placeholder="Search event type or message..." />
+
+        <select class="select" name="event">
+          <option value="" {{ 'selected' if not event else '' }}>All events</option>
+          <option value="ACCESS_REQUESTED" {{ 'selected' if event=='ACCESS_REQUESTED' else '' }}>ACCESS_REQUESTED</option>
+          <option value="DECISION_MADE" {{ 'selected' if event=='DECISION_MADE' else '' }}>DECISION_MADE</option>
+        </select>
+
+        <button class="ghost" type="submit">🔎 Apply</button>
+        <a class="ghost" href="/manager/audit?org_id={{ org_id }}">↩ Reset</a>
+      </form>
+    </div>
+  </div>
+
+  <div class="wrap">
+    {% if logs|length == 0 %}
+      <div class="empty">
+        <b>No audit entries found.</b>
+        <div style="margin-top:6px;">Try changing filters or generate requests using SDK.</div>
+      </div>
+    {% else %}
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:220px;">Time</th>
+              <th style="width:180px;">Event</th>
+              <th>Message</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for l in logs %}
+              <tr>
+                <td class="mono">{{ l.created_at }}</td>
+                <td class="mono">{{ l.event_type }}</td>
+                <td class="msg">{{ l.message }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="pagination">
+          <div class="pageinfo">
+            Showing <b>{{ logs|length }}</b> of <b>{{ total }}</b> • Page <b>{{ page }}</b> / <b>{{ total_pages }}</b>
+          </div>
+          <div class="pager">
+            {% set prev = page - 1 %}
+            {% set nxt = page + 1 %}
+            <a class="ghost" href="/manager/audit?org_id={{ org_id }}&q={{ q }}&event={{ event }}&page=1">⏮ First</a>
+            <a class="ghost" href="/manager/audit?org_id={{ org_id }}&q={{ q }}&event={{ event }}&page={{ prev if prev>=1 else 1 }}">◀ Prev</a>
+            <a class="ghost" href="/manager/audit?org_id={{ org_id }}&q={{ q }}&event={{ event }}&page={{ nxt if nxt<=total_pages else total_pages }}">Next ▶</a>
+            <a class="ghost" href="/manager/audit?org_id={{ org_id }}&q={{ q }}&event={{ event }}&page={{ total_pages }}">Last ⏭</a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

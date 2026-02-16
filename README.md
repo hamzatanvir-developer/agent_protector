@@ -215,7 +215,7 @@ python -m uvicorn main:app --reload --port 8000
 
 
 ✅ Open:
-[http://127.0.0.1:8000/demo/agent](http://127.0.0.1:8000/manager/console?org_id=aada601f-6e70-4f43-beca-3f0b88ef852f&tab=pending&refresh=6&from=demo)
+http://127.0.0.1:8000/manager/console?org_id=aada601f-6e70-4f43-beca-3f0b88ef852f&tab=pending&refresh=6&from=demo
 
 🐳 Run with Docker (Optional)
 docker compose up -d
